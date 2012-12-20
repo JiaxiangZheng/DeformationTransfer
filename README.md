@@ -2,7 +2,8 @@ DeformationTransfer
 ===================
 
 A very simple implement for the first step of deformation transfer that might be
-used in my later reconstruction work. The result can be shown in
+used in my later reconstruction work. The result can be shown below.
+
 ![ScreenShot](https://raw.github.com/JiaxiangZheng/DeformationTransfer/master/data/result.png)
 
 NOET:
