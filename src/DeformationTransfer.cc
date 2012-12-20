@@ -83,8 +83,6 @@ deform_transfer(TriMesh& src, const TriMesh& dst, const std::vector<std::pair<in
     return;
 }
 
-#include <fstream>
-#include <iostream>
 static void 
 _solve_linear_system(TriMesh& src, const TriMesh& dst, 
     const std::vector<std::vector<int>>& tri_neighbours, 
@@ -236,8 +234,11 @@ _solve_linear_system(TriMesh& src, const TriMesh& dst,
 #include <flann/flann.hpp>
 static double* dataset;
 static flann::Index<flann::L2<double>> *kd_flann_index;
+
+//the threshold should be adjust according to the input data or you can just use
+//the hard constraints's average error to compute the threshold
 #define THRESHOLD_DIST 0.1     //less
-#define THRESHOLD_NORM 0.7      //greater
+#define THRESHOLD_NORM 0.7     //greater
 static void 
 _build_kdtree(const TriMesh& dataset_mesh) {
     int vert_num = dataset_mesh.vert_num;
@@ -289,5 +290,4 @@ _release_kdtree() {
     delete []dataset;
 	delete kd_flann_index;
 	kd_flann_index = NULL;
-//    kd_flann_index->ptr() = NULL;
 }
