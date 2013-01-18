@@ -71,8 +71,8 @@ deform_transfer(TriMesh& src, const TriMesh& dst, const std::vector<std::pair<in
     _build_kdtree(dst);
 
 	int cnt = 0;
-    double weights[3] = {1.0, 0.01, 0.0};  //smooth, regular, identity weights, soft_constraints(nearest point)
-	for (; weights[2] <= 200.0; weights[2]+=20.0, ++cnt) {
+	double weights[3] = {0.1, 0.01, 0.0};  //smooth, identity weights, soft_constraints(nearest point)
+	for (; weights[2] <= 10.0; weights[2]+=1.0, ++cnt) {
 		_solve_linear_system(src, dst, tri_neighbours, corres, weights);
 		char filename[512]; sprintf(filename, "src_to_dst_%d.obj", cnt);
 		src.saveOBJ(filename);
@@ -81,7 +81,7 @@ deform_transfer(TriMesh& src, const TriMesh& dst, const std::vector<std::pair<in
     _release_kdtree();
     return;
 }
-
+#include <fstream>
 static void 
 _solve_linear_system(TriMesh& src, const TriMesh& dst, 
     const std::vector<std::vector<int>>& tri_neighbours, 
@@ -92,8 +92,15 @@ _solve_linear_system(TriMesh& src, const TriMesh& dst,
     assert (tri_neighbours.size() == src.poly_num);
     std::vector<std::pair<int, int>> soft_corres;
     _setup_kd_correspondence(src, dst, soft_corres);
-
-    for (int i=0; i<src.poly_num; ++i)
+#if 0
+	std::ofstream ofs("E:/data/ScapeOriginal/build/data_ming/dt_pairs.txt");
+	ofs << soft_corres.size() << endl;
+	for (size_t i=0; i<soft_corres.size(); ++i)
+		ofs << soft_corres[i].first << "\t" << soft_corres[i].second << std::endl;
+	printf("check soft pair\n");
+	getchar();
+#endif
+	for (int i=0; i<src.poly_num; ++i)
         rows += 3*tri_neighbours[i].size();        //smooth part
     rows += src.poly_num*3;        //identity part
 
@@ -126,10 +133,11 @@ _solve_linear_system(TriMesh& src, const TriMesh& dst,
                 real_col++;
             }
         }
+        assert (real_col == src.vert_num - corres.size());  //make sure indexes in corres are different from each other
     }
 
     SparseMatrix<double> A(rows, cols);  
-    A.reserve(Eigen::VectorXi::Constant(cols, 150));
+    A.reserve(Eigen::VectorXi::Constant(cols, 200));
     std::vector<VectorXd> Y(3, VectorXd(rows));
     Y[0].setZero();Y[1].setZero();Y[2].setZero();
 
@@ -315,8 +323,8 @@ _solve_linear_system(TriMesh& src, const TriMesh& dst,
 #include <flann/flann.hpp>
 static double* dataset;
 static flann::Index<flann::L2<double>> *kd_flann_index;
-#define THRESHOLD_DIST 0.1     //less
-#define THRESHOLD_NORM 0.7      //greater
+#define THRESHOLD_DIST 0.005     //less
+#define THRESHOLD_NORM 0.9      //greater
 static void 
 _build_kdtree(const TriMesh& dataset_mesh) {
     int vert_num = dataset_mesh.vert_num;
@@ -337,6 +345,7 @@ _build_kdtree(const TriMesh& dataset_mesh) {
     return;
 }
 
+extern std::vector<bool> boundary_flag;
 static void
 _setup_kd_correspondence(const TriMesh& src_mesh, const TriMesh& dataset_mesh, 
 std::vector<std::pair<int,int>>& soft_correspondence) {
@@ -353,6 +362,7 @@ std::vector<std::pair<int,int>>& soft_correspondence) {
             flann::SearchParams(flann::FLANN_CHECKS_UNLIMITED));
         if (dists[0][0] < THRESHOLD_DIST && 
             src_mesh.norm_coord[i].dot(dataset_mesh.norm_coord[indices[0][0]]) >= THRESHOLD_NORM) {
+			if (boundary_flag[indices[0][0]]) continue;
             soft_correspondence.push_back(std::make_pair(i, indices[0][0]));
         }
     }
