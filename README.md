@@ -13,6 +13,12 @@ selection UI.
 
 It depends on external libraries : **Eigen**[1], **FLANN**[2]
 
+REMEMBER:
+---------------------
+The MACRO defined in .cc or .cpp file should be adjust to your input data and in
+order to make the correspondence to be fine, you should add a boundary detect
+function so to ignore the bad correspondence.
+
 ABOUT DATA:
 ------------------
 
