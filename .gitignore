@@ -11,3 +11,6 @@
 *.lai
 *.la
 *.a
+
+# Main
+./src/main.cpp
