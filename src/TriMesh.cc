@@ -45,18 +45,18 @@ TriMesh::TriMesh(const char* filename) : vert_num(0), poly_num(0)
 
 
 static void drawBoundingBox(Vector3d& _min, Vector3d& _max);
-void TriMesh::render(DisplayMode mode)
+void TriMesh::render(DisplayMode mode) 
 {
 	static bool bbox_flag = false;
 	if (!bbox_flag)
 		this->getBoundingBox(this->BoundingBox_Min, this->BoundingBox_Max);
 	Eigen::Vector3d _center;
 	_center = (this->BoundingBox_Max + this->BoundingBox_Min)*0.5;
-	float scale_factor = (BoundingBox_Max - BoundingBox_Min).norm();
+	double scale_factor = (BoundingBox_Max - BoundingBox_Min).norm();
 	scale_factor = 1.0 / scale_factor;
-// 	glScalef(scale_factor, scale_factor, scale_factor);//×¢ÒâË³Ðò
-// 	glTranslatef(-_center[0], -_center[1], -_center[2]);
-	//	drawBoundingBox(BoundingBox_Min, BoundingBox_Max);
+// 	glScaled(scale_factor, scale_factor, scale_factor);//×¢ÒâË³Ðò
+// 	glTranslated(-_center[0], -_center[1], -_center[2]);
+//	drawBoundingBox(BoundingBox_Min, BoundingBox_Max);
 	assert(norm_coord.size() == vertex_coord.size());
 	if (mode == POINT_MODE)
 	{
@@ -264,7 +264,7 @@ void TriMesh::readPLY(const char* filename)
 	fclose(fp);
 	updateNorm();
 }
-void TriMesh::saveOBJ(const char* filename)
+void TriMesh::saveOBJ(const char* filename) const
 {
 	FILE* fp = fopen(filename, "w");
 	if (!fp) return;
@@ -281,14 +281,14 @@ void TriMesh::saveOBJ(const char* filename)
 	fclose(fp);
 	return;
 }
-void TriMesh::getBoundingBox(Vector3d& Min, Vector3d& Max)
+void TriMesh::getBoundingBox(Vector3d& Min, Vector3d& Max) 
 {
 	const double LIMIT_MAX = numeric_limits<double>::max();
 	const double LIMIT_MIN = numeric_limits<double>::min();
 	Min = Vector3d(LIMIT_MAX, LIMIT_MAX, LIMIT_MAX); Max = Vector3d(LIMIT_MIN, LIMIT_MIN, LIMIT_MIN);
 	for (auto it = vertex_coord.begin(); it != vertex_coord.end(); ++it)
 	{
-		Vector3d& refThis = *it;
+		const Eigen::Vector3d& refThis = *it;
 		if (refThis[0] < Min[0])		Min[0] = refThis[0];
 		else if (refThis[0] > Max[0])	Max[0] = refThis[0];
 
@@ -300,34 +300,35 @@ void TriMesh::getBoundingBox(Vector3d& Min, Vector3d& Max)
 	}
 	return;
 }
-struct EdgeLink
+struct edge_t
 {
-	unsigned int v[2];
-	EdgeLink(unsigned int v1, unsigned int v2) 
+	unsigned int v1, v2;
+	edge_t(unsigned int _v1, unsigned int _v2) 
 	{
-		v[0] = v1 < v2 ? v1 : v2;
-		v[1] = v1 < v2 ? v2 : v1;
+		assert (_v1 != _v2);
+		v1 = _v1 < _v2 ? _v1 : _v2;
+		v2 = _v1 < _v2 ? _v2 : _v1;
 	}
-	bool operator < (const EdgeLink& ref) const 
+	bool operator < (const edge_t& ref) const 
 	{
-		if (v[0] != ref.v[0])  return v[0] < ref.v[0];
-		else return v[1] < ref.v[1];
+		if (v1 != ref.v1)  return v1 < ref.v1;
+		else return v2 < ref.v2;
 	}
 };
 #include <map>
-void TriMesh::prepareFaceNeighbours(std::vector<std::vector<int>>& neighbours)
+void TriMesh::prepareFaceNeighbours(std::vector<std::vector<int>>& neighbours) const
 {
 	if (!neighbours.empty()) {
 		fprintf(stdout, "neighbours is not empty, do nothing...\n");
 		return;
 	}
 	using std::multimap;
-	multimap<EdgeLink, int> edgeFaceMap;
+	multimap<edge_t, int> edgeFaceMap;
 	for (int i=0; i<poly_num; ++i)
 	{
-		edgeFaceMap.insert(std::make_pair(EdgeLink(polyIndex[i].vert_index[0], polyIndex[i].vert_index[1]), i));
-		edgeFaceMap.insert(std::make_pair(EdgeLink(polyIndex[i].vert_index[1], polyIndex[i].vert_index[2]), i));
-		edgeFaceMap.insert(std::make_pair(EdgeLink(polyIndex[i].vert_index[2], polyIndex[i].vert_index[0]), i));
+		edgeFaceMap.insert(std::make_pair(edge_t(polyIndex[i].vert_index[0], polyIndex[i].vert_index[1]), i));
+		edgeFaceMap.insert(std::make_pair(edge_t(polyIndex[i].vert_index[1], polyIndex[i].vert_index[2]), i));
+		edgeFaceMap.insert(std::make_pair(edge_t(polyIndex[i].vert_index[2], polyIndex[i].vert_index[0]), i));
 	}
 	neighbours.resize(poly_num);
 
@@ -335,7 +336,7 @@ void TriMesh::prepareFaceNeighbours(std::vector<std::vector<int>>& neighbours)
 	{
 		for (int j=0; j<3; ++j)
 		{
-			EdgeLink edgeLink(polyIndex[i].vert_index[j], polyIndex[i].vert_index[(j+1)%3]);
+			edge_t edgeLink(polyIndex[i].vert_index[j], polyIndex[i].vert_index[(j+1)%3]);
 			auto lowerIter = edgeFaceMap.lower_bound(edgeLink); //it must return true
 			assert(lowerIter != edgeFaceMap.end());
 			if (lowerIter->second == i) ++lowerIter;
@@ -344,6 +345,23 @@ void TriMesh::prepareFaceNeighbours(std::vector<std::vector<int>>& neighbours)
 	}
 
 	return;
+}
+void TriMesh::getVertexBoundary(std::vector<bool>& v_flags) const
+{
+	int nv = this->vert_num, nf = this->poly_num;
+	std::map<edge_t, int> edges;
+	for (int i=0; i<nf; ++i) {
+		edges[edge_t(this->polyIndex[i].vert_index[0], this->polyIndex[i].vert_index[1])]++;
+		edges[edge_t(this->polyIndex[i].vert_index[1], this->polyIndex[i].vert_index[2])]++;
+		edges[edge_t(this->polyIndex[i].vert_index[2], this->polyIndex[i].vert_index[0])]++;
+	}
+	v_flags.clear(); v_flags.resize(nv, false);
+	for (auto it=edges.begin(); it != edges.end(); ++it) {
+		if (it->second != 2) {
+			v_flags[(it->first).v1] = true;
+			v_flags[(it->first).v2] = true;
+		}
+	}
 }
 
 static void drawBoundingBox(Vector3d& _min, Vector3d& _max)
@@ -370,56 +388,4 @@ static void drawBoundingBox(Vector3d& _min, Vector3d& _max)
 			glVertex3dv(&box_verts[indices[i][j]][0]);
 		glEnd();
 	}
-}
-
-void Skeleton::read(const char* filename)
-{
-	pos.clear(); parents.clear();
-	FILE* fp = NULL;
-	fopen_s(&fp, filename, "r");
-	if (!fp) {
-		fprintf(stdout, "unable to open %s\n", filename);
-		return;
-	}
-	Eigen::Vector3d _joint_pos; int _joint_parent_id, _joint_id;
-	char line[1024];
-	while (fgets(line, 1024, fp))
-	{
-		sscanf_s(line, "%d %lf %lf %lf %d", &_joint_id, &_joint_pos(0), 
-			&_joint_pos(1), &_joint_pos(2), &_joint_parent_id);
-		pos.push_back(_joint_pos);
-		parents.push_back(_joint_parent_id);
-	}		
-	fclose(fp);
-}
-void Skeleton::render(float sphereSize /* = 0.05 */, float lineWidth /* = 3.0 */)
-{
-	glDisable(GL_DEPTH);
-
-	static float d_color[4] = {0.980392f, 0.129412f, 0.111765f, 1.0f};
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d_color);
-	for (int i=0; i<pos.size(); ++i)
-	{
-		glPushMatrix();
-		glTranslated(pos[i][0], pos[i][1], pos[i][2]);
-		glutSolidSphere(sphereSize, 20, 20);
-		glPopMatrix();
-	}
-
-	glDisable(GL_LIGHTING);
-	glDisable(GL_DEPTH);
-	glColor3d(0.1, 0.1, 0.85);
-	glLineWidth(lineWidth);
-	glBegin(GL_LINES);
-	for (int i=0; i<pos.size(); ++i)
-	{
-		int p = parents[i];
-		if (p < 0) continue;
-		glVertex3dv(&pos[i][0]);
-		glVertex3dv(&pos[p][0]);
-	}
-	glEnd();
-	glLineWidth(1.0);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_DEPTH);
 }

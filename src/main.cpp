@@ -4,65 +4,23 @@
 #include <iostream>
 using namespace std;
 
-char dataset[6][3][512] = { 
-	{"ref_horse.obj", "ref_camel.obj", "ref_horse_camel.cons"},
+char dataset[4][3][512] = { 
+	{"./data/horse_camel/ref_horse.obj", "./data/horse_camel/ref_camel.obj", "./data/horse_camel/ref_horse_camel.cons"},
 	{"face_src.obj", "face_dst.obj", "face_src_dst.cons"}, 
 	{"cube_src.obj", "cube_dst.obj", "cube_src_dst.cons"},
-	{"obj_src.obj", "obj_dst.obj", "obj_src_dst.cons"},
-	{	"E:/data/ScapeOriginal/build/data_ming/pview_front_upsampling.obj", 
-		"E:/data/ScapeOriginal/build/data_ming/Register_front.obj",
-		"E:/data/ScapeOriginal/build/data_ming/frontPair_upsampling.txt"
-	}, 
-	{
-		"F:/temp/pview_front_upsampling.obj",
-		"F:/temp/merged_result.obj",
-		"F:/temp/corres.cons"
-	}
+	{"obj_src.obj", "obj_dst.obj", "obj_src_dst.cons"}
 };
 
-namespace {
-	struct edge_t {
-		unsigned int v1, v2;
-		edge_t(unsigned int _v1, unsigned int _v2) {
-			assert (_v1 != _v2);
-			v1 = _v1 < _v2 ? _v1 : _v2;
-			v2 = _v1 < _v2 ? _v2 : _v1;
-		}
-	};
-	bool operator < (const edge_t& ref1, const edge_t& ref2) {
-		return ref1.v1 < ref2.v1 ? true : (ref1.v1 == ref2.v1 && ref1.v2 < ref2.v2);
-	}
-
-}//end namespace
-#include <map>
-static void mesh_boundary_detect(const TriMesh& mesh, std::vector<bool>& boundary_v_flags) {
-	int nv = mesh.vert_num, nf = mesh.poly_num;
-	std::map<edge_t, int> edges;
-	for (int i=0; i<nf; ++i) {
-		edges[edge_t(mesh.polyIndex[i].vert_index[0], mesh.polyIndex[i].vert_index[1])]++;
-		edges[edge_t(mesh.polyIndex[i].vert_index[1], mesh.polyIndex[i].vert_index[2])]++;
-		edges[edge_t(mesh.polyIndex[i].vert_index[2], mesh.polyIndex[i].vert_index[0])]++;
-	}
-	boundary_v_flags.clear(); boundary_v_flags.resize(nv, false);
-	for (auto it=edges.begin(); it != edges.end(); ++it) {
-		if (it->second != 2) {
-			boundary_v_flags[(it->first).v1] = true;
-			boundary_v_flags[(it->first).v2] = true;
-		}
-	}
-
-	return;
-}
 std::vector<bool> boundary_flag;
 
 int main() {
-	int test_index = 5;
- 	mesh_boundary_detect(dataset[test_index][1], boundary_flag);
-
+	int test_index = 0;
 	printf("start loading src and dst\n");
 	TriMesh src(dataset[test_index][0]);
 	TriMesh dst(dataset[test_index][1]);
 	printf("finished loading src and dst\n");
+
+	dst.getVertexBoundary(boundary_flag);		//对于部分对应比较有效
 
 	vector<pair<int, int>> corres;
 	ifstream ifs(dataset[test_index][2]); int cnt;

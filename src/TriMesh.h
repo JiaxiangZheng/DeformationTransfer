@@ -31,23 +31,14 @@ public:
 	TriMesh() : vert_num(0), poly_num(0) {}
 	TriMesh(const char* filename);
 	void updateNorm();
-	void render(DisplayMode mode);
-	void prepareFaceNeighbours(std::vector<std::vector<int>>& neighbours);
-	void saveOBJ(const char* filename);
+	void render(DisplayMode mode) ;
+	void prepareFaceNeighbours(std::vector<std::vector<int>>& neighbours) const;
+	void getVertexBoundary(std::vector<bool>& v_flags) const;
+	void saveOBJ(const char* filename) const;
 	void getBoundingBox(Eigen::Vector3d& Min, Eigen::Vector3d& Max);
 private:
 	void readPLY(const char* filename);
 	void readOBJ(const char* filename);
-};
-
-struct Skeleton
-{
-	std::vector<Eigen::Vector3d> pos;
-	std::vector<int>			 parents;
-	Skeleton() {}
-	Skeleton(const char* filename) {read(filename);}
-	void read(const char* filename);
-	void render(float sphereSize = 0.05, float lineWidth = 3.0);
 };
 
 #endif/*_TRI_MESH_HH_*/
