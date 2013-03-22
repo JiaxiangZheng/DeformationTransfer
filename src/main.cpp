@@ -4,11 +4,8 @@
 #include <iostream>
 using namespace std;
 
-char dataset[4][3][512] = { 
-	{"./data/horse_camel/ref_horse.obj", "./data/horse_camel/ref_camel.obj", "./data/horse_camel/ref_horse_camel.cons"},
-	{"face_src.obj", "face_dst.obj", "face_src_dst.cons"}, 
-	{"cube_src.obj", "cube_dst.obj", "cube_src_dst.cons"},
-	{"obj_src.obj", "obj_dst.obj", "obj_src_dst.cons"}
+char dataset[1][3][512] = { 
+	{"./data/horse_camel/ref_horse.obj", "./data/horse_camel/ref_camel.obj", "./data/horse_camel/ref_horse_camel.cons"}
 };
 
 std::vector<bool> boundary_flag;

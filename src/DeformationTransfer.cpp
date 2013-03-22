@@ -73,11 +73,9 @@ deform_transfer(TriMesh& src, const TriMesh& dst, const std::vector<std::pair<in
 	int cnt = 0;
 	double weights[3] = {0.1, 0.01, 0.0};  //smooth, identity weights, soft_constraints(nearest point)
 	for (; weights[2] <= 10.0; weights[2]+=1.0, ++cnt) {
-		_solve_linear_system(src, dst, tri_neighbours, corres, weights);
-		char filename[512]; sprintf(filename, "src_to_dst_%d.obj", cnt);
-		src.saveOBJ(filename);
+		_solve_linear_system(src, dst, tri_neighbours, corres, weights);		
 	}
-
+	src.saveOBJ("result.obj");
     _release_kdtree();
     return;
 }
@@ -114,7 +112,7 @@ _solve_linear_system(TriMesh& src, const TriMesh& dst,
     for (int i=0; i<soft_corres.size(); ++i) {  //soft constraints part
         if (vertex_flag[soft_corres[i].first]) continue;
         ++rows;
-    }
+	}
 
     //vertex_real_col stores two information : unknow vertex's col(offset by
     //poly_num) in X and know vertexs' corresponding index in dst mesh.
@@ -292,18 +290,18 @@ _solve_linear_system(TriMesh& src, const TriMesh& dst,
         exit(-1);
     }
 
-    VectorXd X[3];
-    for (int i=0; i<3; ++i) {
-        VectorXd AtY = At*Y[i];
-        X[i] = solver.solve(AtY);
-        Eigen::VectorXd Energy = A*X[i] - Y[i];
-        Eigen::VectorXd smoothEnergy = Energy.head(energy_size[0]);
-        Eigen::VectorXd identityEnergy = Energy.segment(energy_size[0], energy_size[1]-energy_size[0]);
-        Eigen::VectorXd softRegularEnergy = Energy.tail(energy_size[2]-energy_size[1]);
-        fprintf(stdout, "\t%lf = %lf + %lf + %lf\n", 
-            Energy.dot(Energy), smoothEnergy.dot(smoothEnergy), 
-            identityEnergy.dot(identityEnergy), softRegularEnergy.dot(softRegularEnergy));
-    }
+	VectorXd X[3];
+	for (int i=0; i<3; ++i) {
+		VectorXd AtY = At*Y[i];
+		X[i] = solver.solve(AtY);
+		Eigen::VectorXd Energy = A*X[i] - Y[i];
+		Eigen::VectorXd smoothEnergy = Energy.head(energy_size[0]);
+		Eigen::VectorXd identityEnergy = Energy.segment(energy_size[0], energy_size[1]-energy_size[0]);
+		Eigen::VectorXd softRegularEnergy = Energy.tail(energy_size[2]-energy_size[1]);
+		fprintf(stdout, "\t%lf = %lf + %lf + %lf\n", 
+			Energy.dot(Energy), smoothEnergy.dot(smoothEnergy), 
+			identityEnergy.dot(identityEnergy), softRegularEnergy.dot(softRegularEnergy));
+	}
     
     //fill data back to src
     for (int i=0; i<src.poly_num; ++i)

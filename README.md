@@ -2,8 +2,14 @@ DeformationTransfer
 ===================
 
 A very simple implement for the first step of deformation transfer that might be
+<<<<<<< HEAD
 used in my later reconstruction work. The result can be shown in
 ![](./data/result.png)
+=======
+used in my later reconstruction work. The result can be shown below.
+
+![ScreenShot](https://raw.github.com/JiaxiangZheng/DeformationTransfer/master/data/result.png)
+>>>>>>> cf1e54c631d22d9f717cde3ce1b99a80c4b20d6c
 
 NOET:
 -------------------
