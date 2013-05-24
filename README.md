@@ -2,14 +2,19 @@ DeformationTransfer
 ===================
 
 A very simple implement for the first step of deformation transfer that might be
-<<<<<<< HEAD
-used in my later reconstruction work. The result can be shown in
-![](./data/result.png)
-=======
 used in my later reconstruction work. The result can be shown below.
 
-![ScreenShot](https://raw.github.com/JiaxiangZheng/DeformationTransfer/master/data/result.png)
->>>>>>> cf1e54c631d22d9f717cde3ce1b99a80c4b20d6c
+Firstly, the input is two different mesh (namely source mesh and target mesh),
+the result using the algorithms is to deform the first/upper mesh to be similar
+to the second/lower mesh. It can be shown in the following snapshot.
+![](./data/pipeline.jpg)
+
+If we dump the target mesh and the deformed mesh together, it's obviously that
+they fit very well. 
+![](./data/fit_result.jpg)
+
+And use this result, I transfered the motion of the target mesh to the source mesh.
+![](./data/transfer_result.jpg)
 
 NOET:
 -------------------
@@ -21,7 +26,8 @@ It depends on external libraries : **Eigen**[^1], **FLANN**[^2]
 
 REMEMBER:
 ---------------------
-The MACRO defined in .cc or .cpp file should be adjust to your input data and in
+The MACRO defined in .cc(*all vertexs' pos are to be solved*) or .cpp(*correspondence
+vertexs' pos are fixed as a prior*) file should be adjust to your input data and in
 order to make the correspondence to be fine, you should add a boundary detect
 function so to ignore the bad correspondence.
 
